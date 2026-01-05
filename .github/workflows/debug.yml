@@ -1,0 +1,27 @@
+name: Debug Login
+on: [push]
+
+jobs:
+  debug-login:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Test Secret Availability
+        run: |
+          if [ -z "${{ secrets.AZURE_CREDENTIALS }}" ]; then
+            echo "ERROR: The secret AZURE_CREDENTIALS is empty!"
+            exit 1
+          else
+            echo "SUCCESS: The secret was found (it will be masked below)."
+          fi
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          allow-no-subscriptions: true 
+
+      - name: Verify Login
+        run: az account show
