@@ -34,9 +34,6 @@ jobs:
           AKS_NAME=$(az aks list -g student-devops-rg --query "[0].name" -o tsv)
           az aks get-credentials -g student-devops-rg -n $AKS_NAME --overwrite-existing
           
-          # 2. Attach ACR to AKS (Allow them to talk)
-          ACR_NAME=$(az acr list -g student-devops-rg --query "[0].name" -o tsv)
-          az aks update -n $AKS_NAME -g student-devops-rg --attach-acr $ACR_NAME
 
           # 3. Deploy
           kubectl create deployment myapp --image=$ACR_NAME.azurecr.io/myapp:${{ github.sha }} --dry-run=client -o yaml | kubectl apply -f -
