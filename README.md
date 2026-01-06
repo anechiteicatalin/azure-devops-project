@@ -13,7 +13,6 @@ Instead of relying on standard GitHub-hosted runners (which are ephemeral and la
 
 ### 1. The Diagram
 ![Architecture Diagram](https://github.com/anechiteicatalin/azure-devops-project/blob/main/image.png?raw=true)
-*(Note: Ensure you upload your diagram image to an `images` folder in your repo)*
 
 ### 2. The Self-Hosted Runner (The Worker) 🤖
 We configured a **"Listening Bridge"** where the Azure VM connects to GitHub to ask for jobs.
