@@ -22,6 +22,7 @@ az cli: To authenticate with Azure.
 
 kubectl: To send commands to the AKS Cluster.
 
+![Description of Image](image.png)
 
 3. The Pipeline Workflow (deploy.yml)
 The file located at .github/workflows/deploy.yml defines the automation logic. Here is the technical breakdown of the steps:
