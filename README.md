@@ -12,7 +12,7 @@ Instead of relying on standard GitHub-hosted runners (which are ephemeral and la
 ## 🏗️ Architecture
 
 ### 1. The Diagram
-![Architecture Diagram](https://github.com/anechiteicatalin/azure-devops-project/blob/main/images/architecture.png?raw=true)
+![Architecture Diagram](https://github.com/anechiteicatalin/azure-devops-project/blob/main/images/image.png?raw=true)
 *(Note: Ensure you upload your diagram image to an `images` folder in your repo)*
 
 ### 2. The Self-Hosted Runner (The Worker) 🤖
