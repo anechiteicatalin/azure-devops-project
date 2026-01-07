@@ -87,7 +87,7 @@ resource "azurerm_linux_virtual_machine" "runner_vm" {
   name                = "github-runner-vm"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  size                = "Standard_B2s"
+  size                = "Standard_B2s_v2"
   admin_username      = "azureuser"
   admin_password      = "StudentLab@1234"
   disable_password_authentication = false
@@ -134,7 +134,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
   default_node_pool {
     name       = "default"
     node_count = 1
-    vm_size    = "Standard_B2s"
+    vm_size    = "Standard_B2s_v2"
   }
 
   identity {
