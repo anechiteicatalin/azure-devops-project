@@ -1,0 +1,156 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
+# 1. Resource Group
+resource "azurerm_resource_group" "rg" {
+  name     = "student-devops-rg"
+  location = "Poland Central" 
+}
+
+# 2. Networking (VNet & Subnet)
+resource "azurerm_virtual_network" "vnet" {
+  name                = "student-vnet"
+  address_space       = ["10.0.0.0/16"]
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_subnet" "subnet" {
+  name                 = "student-subnet"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.0.1.0/24"]
+}
+
+# 3. Public IP for the Runner
+resource "azurerm_public_ip" "runner_ip" {
+  name                = "runner-ip"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+# 4. Network Security Group (Allow SSH)
+resource "azurerm_network_security_group" "nsg" {
+  name                = "runner-nsg"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  security_rule {
+    name                       = "SSH"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+resource "azurerm_network_interface" "runner_nic" {
+  name                = "runner-nic"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.subnet.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.runner_ip.id
+  }
+}
+
+resource "azurerm_network_interface_security_group_association" "nsg_assoc" {
+  network_interface_id      = azurerm_network_interface.runner_nic.id
+  network_security_group_id = azurerm_network_security_group.nsg.id
+}
+
+# 5. Virtual Machine (Self-Hosted Runner)
+resource "azurerm_linux_virtual_machine" "runner_vm" {
+  name                = "github-runner-vm"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  size                = "Standard_B2s"
+  admin_username      = "azureuser"
+  admin_password      = "StudentLab@1234"
+  disable_password_authentication = false
+
+  network_interface_ids = [
+    azurerm_network_interface.runner_nic.id,
+  ]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-focal"
+    sku       = "20_04-lts"
+    version   = "latest"
+  }
+}
+
+# 6. Azure Container Registry (ACR)
+resource "random_string" "acr_suffix" {
+  length  = 6
+  special = false
+  upper   = false
+}
+
+resource "azurerm_container_registry" "acr" {
+  name                = "studentacr${random_string.acr_suffix.result}"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  sku                 = "Basic"
+  admin_enabled       = true
+}
+
+# 7. Kubernetes Cluster (AKS)
+resource "azurerm_kubernetes_cluster" "aks" {
+  name                = "student-aks-cluster"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  dns_prefix          = "studentaks"
+
+  default_node_pool {
+    name       = "default"
+    node_count = 1
+    vm_size    = "Standard_B2s"
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+}
+
+# 8. Outputs (Use these to connect)
+output "runner_ip" {
+  value = azurerm_public_ip.runner_ip.ip_address
+}
+
+output "acr_name" {
+  value = azurerm_container_registry.acr.name
+}
+
+output "aks_name" {
+  value = azurerm_kubernetes_cluster.aks.name
+}
